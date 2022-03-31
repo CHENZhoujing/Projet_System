@@ -11,27 +11,26 @@
 #define MSG_LEN = 1024
 
 // Articles
-#define article "Classique"
-//#define ARTICLE "Rustique"
+#define ARTICLE "creux"
+//#define ARTICLE "plein"
 
 // Web server
 #define SERVER "sw1"
 //#define SERVER "sw2"
 
 // Acheteur
-#define ACHETEUR "Laure"
-//#define ACHETEUR "Philippe"
+#define ACHETEUR "Antoine"
+//#define ACHETEUR "Francoise"
 
 // Transporteurs
-#define TRANSPORTEUR "Xavier"
-//#define TRANSPORTEUR "France"
+#define TRANSPORTEUR "Jule"
+//#define TRANSPORTEUR "Anne"
 
 // Informations
-#define CAPACITE_PALLET 63
-#define PRIX_ROULEAU 5
-#define SURFACE 40
-#define SURFACE_ROULEAU 1
-#define STOCK 3000
+#define PRIX_UNE_MC 10.0
+#define SURFACE_UNITAIRE 5.0
+#define SURFACE_DEMANDE 17.0
+#define STOCK 10000.0
 
 enum
 {
@@ -46,25 +45,25 @@ Pipe buyerToServer;
 Pipe buyerToCarrier;
 Pipe carrierToBuyer;
 
-static void echoMsg(int step, char *source, char *dest, char *msg)
+void echoMsg(int step, char *source, char *dest, char *msg)
 {
     printf("%d [%s]\tmsg de <%s>\t%s\n", step, source, dest, msg);
 }
 
-static void echoLog(int step, char *source, char *msg)
+void echoLog(int step, char *source, char *msg)
 {
     printf("%d [%s]\tlog\t\t%s\n", step, source, msg);
 }
 
-static void buyer()
+void buyer()
 {
     char buffer[BUFFER_SIZE];
 
     printf("0 [ach]\tdémarrage\n");
 
     // 1
-    sprintf(buffer, article);
-    write(buyerToServer[1], article, strlen(article) + 1);
+    sprintf(buffer, ARTICLE);
+    write(buyerToServer[1], ARTICLE, strlen(ARTICLE) + 1);
     echoLog(1, "ach", buffer);
 
     // 2
@@ -72,7 +71,7 @@ static void buyer()
     echoMsg(2, "ach", "srv", buffer);
 
     // 3
-    sprintf(buffer, "quantité souhaité %d m²", SURFACE);
+    sprintf(buffer, "quantité souhaité %.1f m²", SURFACE_DEMANDE);
     write(buyerToServer[1], buffer, strlen(buffer) + 1);
 
     // 4
@@ -96,7 +95,7 @@ static void buyer()
     write(buyerToCarrier[1], buffer, BUFFER_SIZE);
 }
 
-static void server()
+void server()
 {
     char buffer[BUFFER_SIZE];
     printf("0 [srv]\tdémarrage\n");
@@ -106,7 +105,7 @@ static void server()
     echoMsg(1, "srv", "ach", buffer);
 
     // 2
-    sprintf(buffer, "quantité disponible de rouleaux %d", STOCK);
+    sprintf(buffer, "quantité disponible de rouleaux %.1f", STOCK);
     write(serverToBuyer[1], buffer, strlen(buffer) + 1);
     printf("2 [srv]\tlog\t\tenvoi de la quantité en stock\n");
 
@@ -115,10 +114,10 @@ static void server()
     echoMsg(3, "srv", "ach", buffer);
 
     // 4
-    int nb_palette = ceil(SURFACE / (float)CAPACITE_PALLET);
-    int price = SURFACE * PRIX_ROULEAU;
+    double nb_palette = ceil(SURFACE_DEMANDE / SURFACE_UNITAIRE);
+    double price = nb_palette * PRIX_UNE_MC * SURFACE_UNITAIRE;
 
-    sprintf(buffer, "nombre de palette: %d, prix: %d €", nb_palette, price);
+    sprintf(buffer, "nombre de palette: %.1f, prix: %.1f €", nb_palette, price);
     write(serverToBuyer[1], buffer, BUFFER_SIZE);
     printf("4 [srv]\tlog\t\tenvoi du nombre de palette et du prix total\n");
 
@@ -127,17 +126,17 @@ static void server()
     echoMsg(5, "srv", "ach", buffer);
 
     // 6
-    sprintf(buffer, "accusé de réception, prix: %d €", price);
+    sprintf(buffer, "accusé de réception, prix: %.1f €", price);
     write(serverToBuyer[1], buffer, BUFFER_SIZE);
 
     // 7
     char bon[BUFFER_SIZE / 3];
-    sprintf(bon, "article: %s, quantité: %d, nombre de palette: %d", article, SURFACE, nb_palette);
+    sprintf(bon, "article: %s, quantité: %.1f, nombre de palette: %.1f", ARTICLE, SURFACE_DEMANDE, nb_palette);
     sprintf(buffer, "bon 1: %s, bon 2: %s", bon, bon);
     write(serverToCarrier[1], buffer, BUFFER_SIZE);
 }
 
-static void carrier()
+void carrier()
 {
     char buffer[BUFFER_SIZE];
     printf("0 [trp]\tdémarrage\n");
