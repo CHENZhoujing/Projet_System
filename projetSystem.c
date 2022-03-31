@@ -31,6 +31,7 @@
 #define SURFACE_UNITAIRE 5.0
 #define SURFACE_DEMANDE 17.0
 #define STOCK 10000.0
+#define NB_PROCESSUS 3
 
 enum
 {
@@ -165,6 +166,45 @@ int main()
     pipe(buyerToCarrier);
     pipe(carrierToBuyer);
 
+    int cpt;
+    int pid;
+
+    for(cpt = 0; cpt < NB_PROCESSUS; cpt++){
+        pid = fork();
+        if(pid < 0){
+            printf("fork error.\n");
+            return -1;
+        }
+        if(pid == 0){
+            break;
+        }
+    }
+
+    switch (cpt)
+    {
+    case 0:
+        close(serverToBuyer[0]);
+        close(serverToCarrier[0]);
+        server();
+        break;
+    case 1: //
+        close(buyerToServer[0]);
+        close(buyerToCarrier[0]);
+        buyer();
+        break;
+    case 2:
+        close(carrierToBuyer[0]);
+        carrier();
+        break;
+    }
+
+    for(int i = 0; i < NB_PROCESSUS; i++){
+        int status = 0;
+        wait(&status);
+    }
+    return 0;
+
+    /*
     // Start each routine in their own process
     // and exit after
     int buyer_pid = fork();
@@ -193,4 +233,5 @@ int main()
             buyer();
         }
     }
+    */
 }
