@@ -9,6 +9,8 @@
 #include <math.h>
 
 #define MSG_LEN = 1024
+#define NB_PROCESSUS 3
+#define BUFFER_SIZE  1024
 
 // Articles
 #define ARTICLE "creux"
@@ -27,16 +29,10 @@
 //#define TRANSPORTEUR "Anne"
 
 // Informations
-#define PRIX_UNE_MC 10.0
+#define PRIX_UNE_MC 5.0
 #define SURFACE_UNITAIRE 5.0
 #define SURFACE_DEMANDE 17.0
 #define STOCK 10000.0
-#define NB_PROCESSUS 3
-
-enum
-{
-    BUFFER_SIZE = 1024
-};
 
 typedef int Pipe[2];
 
@@ -46,9 +42,13 @@ Pipe buyerToServer;
 Pipe buyerToCarrier;
 Pipe carrierToBuyer;
 
+void echoDemarrage(int step, char *source, char * name){
+    printf("%d [%s] %s démarrage\n", step, source, name);
+}
+
 void echoMsg(int step, char *source, char *dest, char *msg)
 {
-    printf("%d [%s]\tmsg de <%s>\t%s\n", step, source, dest, msg);
+    printf("%d [%s]\tmsg de [%s]\t%s\n", step, source, dest, msg);
 }
 
 void echoLog(int step, char *source, char *msg)
@@ -57,10 +57,10 @@ void echoLog(int step, char *source, char *msg)
 }
 
 void buyer()
-{
+{   
     char buffer[BUFFER_SIZE];
 
-    printf("0 [ach]\tdémarrage\n");
+    echoDemarrage(0, "ach", ACHETEUR);
 
     // 1
     sprintf(buffer, ARTICLE);
@@ -80,7 +80,7 @@ void buyer()
     echoMsg(4, "ach", "srv", buffer);
 
     // 5
-    sprintf(buffer, "numéro carte bancaire: 1234567812345678, cryptograme: 777");
+    sprintf(buffer, "numéro carte bancaire: 11111111111111111, cryptograme: 321");
     write(buyerToServer[1], buffer, strlen(buffer) + 1);
 
     // 6
@@ -88,6 +88,8 @@ void buyer()
     echoMsg(6, "ach", "srv", buffer);
 
     // 8
+    read(carrierToBuyer[0], buffer, BUFFER_SIZE);
+    echoMsg(8, "ach", "trp", buffer);
     read(carrierToBuyer[0], buffer, BUFFER_SIZE);
     echoMsg(8, "ach", "trp", buffer);
 
@@ -99,7 +101,7 @@ void buyer()
 void server()
 {
     char buffer[BUFFER_SIZE];
-    printf("0 [srv]\tdémarrage\n");
+    echoDemarrage(0, "srv", SERVER);
 
     // 1
     read(buyerToServer[0], buffer, BUFFER_SIZE);
@@ -140,16 +142,20 @@ void server()
 void carrier()
 {
     char buffer[BUFFER_SIZE];
-    printf("0 [trp]\tdémarrage\n");
+    echoDemarrage(0, "trp", TRANSPORTEUR);
 
     // 7
     read(serverToCarrier[0], buffer, BUFFER_SIZE);
     echoMsg(7, "trp", "srv", buffer);
 
     // 8
-    char order[BUFFER_SIZE / 3];
-    strncpy(order, buffer, (strlen(buffer) / 2) - 1);
-    sprintf(buffer, "livraison et bon: %s", order);
+    char orderBon1[BUFFER_SIZE / 3];
+    char orderBon2[BUFFER_SIZE / 3];
+    strncpy(orderBon1, buffer, strlen(buffer)/2 - 1);
+    strncpy(orderBon2, buffer + strlen(buffer)/2 + 1, (strlen(buffer) / 2) - 1);
+    sprintf(buffer, "livraison et bon: %s", orderBon1);
+    write(carrierToBuyer[1], buffer, BUFFER_SIZE);
+    sprintf(buffer, "livraison et bon: %s", orderBon2);
     write(carrierToBuyer[1], buffer, BUFFER_SIZE);
 
     // 9
@@ -203,35 +209,4 @@ int main()
         wait(&status);
     }
     return 0;
-
-    /*
-    // Start each routine in their own process
-    // and exit after
-    int buyer_pid = fork();
-    if (buyer_pid == 0)
-    {
-        // In the buyer process
-        int server_pid = fork();
-        if (server_pid == 0)
-        {
-            // In the server process
-            close(serverToBuyer[0]);
-            close(serverToCarrier[0]);
-            server();
-
-            int carrier_pid = fork();
-            if (carrier_pid == 0)
-            {
-                close(carrierToBuyer[0]);
-                carrier();
-            }
-        }
-        else if (server_pid > 0)
-        {
-            close(buyerToServer[0]);
-            close(buyerToCarrier[0]);
-            buyer();
-        }
-    }
-    */
 }
