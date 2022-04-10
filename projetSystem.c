@@ -29,9 +29,9 @@
 //#define TRANSPORTEUR "Anne"
 
 // Informations
-#define PRIX_UNE_MC 5.0
-#define SURFACE_UNITAIRE 5.0
-#define SURFACE_DEMANDE 17.0
+#define PRIX_UNE_MC 100.0
+#define SURFACE_UNITAIRE 24.0
+#define SURFACE_DEMANDE 60.0
 #define STOCK 10000.0
 
 typedef int Pipe[2];
@@ -120,7 +120,7 @@ void server()
     double nb_palette = ceil(SURFACE_DEMANDE / SURFACE_UNITAIRE);
     double price = nb_palette * PRIX_UNE_MC * SURFACE_UNITAIRE;
 
-    sprintf(buffer, "nombre de palette: %.1f, prix: %.1f €", nb_palette, price);
+    sprintf(buffer, "une palette est de %0.1f m², nombre de palette: %.1f, prix: %.1f €", SURFACE_UNITAIRE, nb_palette, price);
     write(serverToBuyer[1], buffer, BUFFER_SIZE);
     printf("4 [srv]\tlog\t\tenvoi du nombre de palette et du prix total\n");
 
