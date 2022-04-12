@@ -204,9 +204,11 @@ int main()
         break;
     }
 
-    for(int i = 0; i < NB_PROCESSUS; i++){
-        int status = 0;
-        wait(&status);
+    if(pid != 0){
+        for(int i = 0; i < NB_PROCESSUS; i++){
+            wait(NULL);
+        }
     }
+
     return 0;
 }
